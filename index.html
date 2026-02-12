@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Omar's Global Device Store</title>
+<style>
+:root{
+ --bg: linear-gradient(270deg,#000428,#004e92);
+ --main:#00eaff;
+ --sec:#ff0033;
+}
+
+/* ===== BASE ===== */
+body{
+ margin:0;font-family:Arial;color:white;
+ background:var(--bg);background-size:600% 600%;
+ animation:bg 16s infinite;cursor:none;
+ transition:background 1s,color 1s;
+}
+@keyframes bg{
+ 0%{background-position:0% 50%}
+ 50%{background-position:100% 50%}
+ 100%{background-position:0% 50%}
+}
+.page{display:none;padding:40px;min-height:100vh}
+h1,h2{color:var(--main);text-shadow:0 0 12px var(--sec)}
+input,select{padding:12px;width:260px;border-radius:8px;border:none;margin:8px}
+button{
+ padding:12px 25px;border:none;border-radius:25px;
+ background:linear-gradient(45deg,var(--main),var(--sec));
+ color:white;font-size:16px;cursor:pointer;transition:.3s;
+}
+button:hover{transform:scale(1.05);box-shadow:0 0 25px var(--sec)}
+img{max-width:300px;border-radius:15px;box-shadow:0 0 25px var(--main)}
+
+.cursor{
+ width:18px;height:18px;border-radius:50%;position:fixed;pointer-events:none;z-index:9999;
+ border:2px solid var(--sec);background:transparent;
+}
+
+.price{
+ font-size:28px;color:#00ff99;
+ text-shadow:0 0 15px #00ff99
+}
+
+/* ===== THEMES ===== */
+.dark{
+ --bg:linear-gradient(270deg,#000,#0b0b0b);
+ --main:#7dd3ff;
+ --sec:#2563eb;
+ animation:darkPulse 8s infinite;
+}
+@keyframes darkPulse{
+ 0%,100%{filter:brightness(1)}
+ 50%{filter:brightness(1.1)}
+}
+.light{
+ --bg:linear-gradient(270deg,#f5f7fa,#e4e7eb);
+ --main:#0057ff;
+ --sec:#ff0066;
+ color:#111;
+ animation:lightFlow 10s infinite;
+}
+@keyframes lightFlow{
+ 0%{background-position:0% 50%}
+ 50%{background-position:80% 50%}
+ 100%{background-position:0% 50%}
+}
+.emotion{
+ --bg:linear-gradient(270deg,#001f3f,#3a0ca3,#ff0033);
+ --main:#00eaff;
+ --sec:#ff0033;
+ animation:emotionPulse 5s infinite;
+}
+.emotion .cursor{border:2px solid #00ffff;background:white;} /* cursor visible */
+@keyframes emotionPulse{
+ 0%,100%{filter:brightness(1)}
+ 50%{filter:brightness(1.2)}
+}
+.granite{
+ --bg:linear-gradient(270deg,#444,#888);
+ --main:#bbbbbb;
+ --sec:#ff8800;
+ animation:graniteMove 20s infinite;
+}
+.granite .cursor{border:2px solid #ff8800;background:#bbbbbb;}
+@keyframes graniteMove{
+ 0%{background-position:0% 50%}
+ 50%{background-position:40% 50%}
+ 100%{background-position:0% 50%}
+}
+
+/* ===== CART BTN ===== */
+#cartBtn{
+ position:fixed;top:15px;right:20px;
+ background:black;border:1px solid var(--main);
+ padding:10px 18px;border-radius:20px;
+ cursor:pointer;z-index:999;
+}
+
+/* ===== TOAST ===== */
+#toast{
+ position:fixed;bottom:30px;left:50%;
+ transform:translateX(-50%);
+ background:rgba(0,0,0,.85);
+ padding:15px 30px;border-radius:25px;
+ box-shadow:0 0 20px var(--sec);
+ display:none;z-index:9999;
+ animation:toast 3s forwards;
+}
+@keyframes toast{
+ 0%{opacity:0;transform:translate(-50%,30px)}
+ 20%{opacity:1}
+ 80%{opacity:1}
+ 100%{opacity:0;transform:translate(-50%,-20px)}
+}
+
+#welcome{
+ position:fixed;top:15px;left:20px;
+ font-weight:bold;opacity:.85;z-index:9999;
+ color:white;text-shadow:0 0 12px var(--sec);
+ transition:.2s;
+}
+.dark #welcome{color:#7dd3ff;text-shadow:0 0 10px #2563eb;}
+.light #welcome{color:#0057ff;text-shadow:0 0 8px #ff0066;}
+.emotion #welcome{color:#ff0;text-shadow:0 0 10px #00ffff;}
+.granite #welcome{color:#ff8800;text-shadow:0 0 8px #bbbbbb;}
+</style>
+<script>
+let isLoggedIn=false;
+let username="";
+
+/* CURSOR */
+document.addEventListener("mousemove",e=>{
+ let x=e.clientX, y=e.clientY;
+ cursor.style.left=x+"px";
+ cursor.style.top=y+"px";
+});
+
+/* PAGE */
+function show(id){
+ document.querySelectorAll(".page").forEach(p=>p.style.display="none");
+ document.getElementById(id).style.display="block";
+ updateWelcome();
+}
+
+/* UPDATE WELCOME */
+function updateWelcome(){
+ if(isLoggedIn) welcome.innerText="👋 Welcome to "+username+"'s Shop";
+ else welcome.innerText="👋 Welcome to Omar's Shop";
+}
+
+/* TOAST */
+function toast(msg){
+ const t=document.getElementById("toast");
+ t.innerText=msg;
+ t.style.display="block";
+ setTimeout(()=>t.style.display="none",3000);
+}
+
+/* AUTH */
+function signup(){
+ username=suName.value;
+ if(!username || !suEmail.value || !suPass.value){toast("❌ Please fill all fields"); return;}
+ localStorage.user=username;
+ localStorage.email=suEmail.value;
+ localStorage.pass=suPass.value;
+ toast("✅ Account created successfully, welcome "+username);
+ show("login");
+}
+function login(){
+ if(liEmail.value===localStorage.email && liPass.value===localStorage.pass){
+  isLoggedIn=true;
+  username=localStorage.user;
+  updateWelcome();
+  show("choose");
+ } else alert("Wrong login data");
+}
+
+/* THEME */
+function theme(t){
+ document.body.className=t;
+ if(t==="emotion") cursor.className="cursor emotion";
+ else if(t==="granite") cursor.className="cursor granite";
+ else cursor.className="cursor";
+}
+
+/* CART LOGIC */
+function openCart(){
+ if(isLoggedIn) show("cart");
+ else show("signup");
+}
+
+/* DEVICE SEARCH */
+const stores={
+ Amazon:"https://www.amazon.eg/s?k=",
+ Noon:"https://www.noon.com/egypt-en/search?q=",
+ Temu:"https://www.temu.com/search_result.html?search_key="
+};
+const prices={ Phone:350,Laptop:950,Gaming:550,Any:250 };
+let cart=[],total=0,currentName="",currentPrice=0,currentCat="";
+
+function loadProduct(name,cat){
+ currentName=name; currentCat=cat;
+ currentPrice=prices[cat];
+ selected.innerText=name;
+ price.innerText="$"+currentPrice;
+ details.innerText=`Category: ${cat} | Original | Global Version`;
+ pic.src="https://source.unsplash.com/600x400/?"+name;
+ links.innerHTML="";
+ for(let s in stores){
+   for(let i=1;i<=3;i++){
+     links.innerHTML+=`🔗 ${name} – ${s} (${i})<br>`;
+   }
+   links.innerHTML+="<br>";
+ }
+ show("product");
+}
+function generate(){
+ if(!device.value) return alert("Enter device name");
+ loadProduct(device.value,category.value);
+}
+
+/* ADD TO CART */
+function addCart(){
+ cart.push({n:currentName,p:currentPrice});
+ total+=currentPrice;
+ cartBox.innerHTML=cart.map(i=>`🛒 ${i.n} - $${i.p}<br>`).join("");
+ totalBox.innerText="$"+total;
+ show("cart");
+}
+
+/* BEST DEVICES */
+function suggestions(){
+ sug.innerHTML="";
+ const best=[
+  {n:"iPhone 14 Pro",c:"Phone"},
+  {n:"Samsung S23 Ultra",c:"Phone"},
+  {n:"ASUS ROG Laptop",c:"Laptop"},
+  {n:"PlayStation 5",c:"Gaming"},
+  {n:"MacBook Air M2",c:"Laptop"}
+ ];
+ best.forEach(d=>{
+  sug.innerHTML+=`
+   <div class="card" onclick="loadProduct('${d.n}','${d.c}')">
+    <h3>${d.n}</h3>
+    <img src="https://source.unsplash.com/400x250/?${d.n}">
+    <p class="price">$${prices[d.c]}</p>
+   </div>`;
+ });
+ show("suggest");
+}
+
+window.onload=()=>show("signup");
+</script>
+</head>
+<body>
+<div id="welcome">👋 Welcome to Omar's Shop</div>
+<div id="toast"></div>
+<div id="cartBtn" onclick="openCart()">🛒 Cart</div>
+<div class="cursor" id="cursor"></div>
+
+<!-- SIGNUP -->
+<div id="signup" class="page">
+<h1>Sign Up</h1>
+<input id="suName" placeholder="Username"><br>
+<input id="suEmail" placeholder="Email"><br>
+<input id="suPass" type="password" placeholder="Password"><br>
+<button onclick="signup()">Create Account</button>
+</div>
+
+<!-- LOGIN -->
+<div id="login" class="page">
+<h1>Login</h1>
+<input id="liEmail" placeholder="Email"><br>
+<input id="liPass" type="password"><br>
+<button onclick="login()">Login</button>
+</div>
+
+<!-- CHOOSE -->
+<div id="choose" class="page">
+<h1>Choose Device</h1>
+<select id="category"><option>Phone</option><option>Laptop</option><option>Gaming</option><option>Any</option></select><br>
+<input id="device" placeholder="Device name"><br>
+<button onclick="generate()">Search</button>
+<button onclick="suggestions()">Best Devices</button><br><br>
+<button onclick="theme('dark')">Dark</button>
+<button onclick="theme('light')">Light</button>
+<button onclick="theme('emotion')">Emotion</button>
+<button onclick="theme('granite')">Granite</button>
+</div>
+
+<!-- PRODUCT -->
+<div id="product" class="page">
+<h1 id="selected"></h1>
+<div class="price" id="price"></div>
+<p id="details"></p>
+<img id="pic"><br><br>
+<div id="links"></div>
+<button onclick="addCart()">Add to Cart</button>
+</div>
+
+<!-- CART -->
+<div id="cart" class="page">
+<h1>Your Cart</h1>
+<div id="cartBox"></div>
+<h2>Total: <span class="price" id="totalBox"></span></h2>
+<button onclick="show('choose')">Back</button>
+</div>
+
+<!-- SUGGEST -->
+<div id="suggest" class="page">
+<h1>🔥 Best Devices</h1>
+<div id="sug"></div>
+<button onclick="show('choose')">Back</button>
+</div>
+</body>
+</html>
